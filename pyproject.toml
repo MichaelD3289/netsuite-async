@@ -23,8 +23,6 @@ keywords = ["netsuite", "async", "rest", "api", "client", "erp", "oauth"]
 dependencies = [
     "authlib>=1.6.5",
     "httpx>=0.28.1",
-    "pydantic>=2.12.4",
-    "pydantic-settings>=2.11.0",
 ]
 
 [project.urls]
