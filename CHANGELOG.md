@@ -8,26 +8,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - N/A
 
 ### Changed
+
 - N/A
 
 ### Deprecated
+
 - N/A
 
 ### Removed
-- Unused pydantic and pydantic-settings dependencies
+
+- N/A
 
 ### Fixed
+
 - N/A
 
 ### Security
+
 - N/A
 
-## [0.1.0] - 2024-12-19
+## [0.1.1] - 2025-11-24
+
+### Removed
+
+- Unused pydantic and pydantic-settings dependencies for smaller package size
+
+## [0.1.0] - 2025-11-24
 
 ### Added
+
 - Initial release of netsuite-async
 - Async-first NetSuite REST API client with AsyncAuthProvider pattern
 - OAuth 1.0 authentication with HMAC-SHA256 signatures
