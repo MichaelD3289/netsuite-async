@@ -8,6 +8,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- N/A
+
+### Changed
+- N/A
+
+### Deprecated
+- N/A
+
+### Removed
+- N/A
+
+### Fixed
+- N/A
+
+### Security
+- N/A
+
+## [0.1.0] - 2024-12-19
+
+### Added
 - Initial release of netsuite-async
 - Async-first NetSuite REST API client with AsyncAuthProvider pattern
 - OAuth 1.0 authentication with HMAC-SHA256 signatures
@@ -27,18 +47,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive docstrings with examples for all public methods
 - Complete API reference and performance guidance
 - Context manager support for automatic resource cleanup
-
-### Changed
-- N/A
-
-### Deprecated
-- N/A
-
-### Removed
-- N/A
-
-### Fixed
-- N/A
-
-### Security
-- N/A
