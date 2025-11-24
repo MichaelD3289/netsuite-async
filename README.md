@@ -366,7 +366,6 @@ client = await async_oauth1_client()
 - Python 3.12+
 - httpx >= 0.28.1
 - authlib >= 1.6.5
-- pydantic >= 2.12.4
 
 ## License
 
