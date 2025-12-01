@@ -31,6 +31,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - N/A
 
+## [0.1.2] - 2024-12-19
+
+### Added
+
+- Automated PyPI deployment workflow via GitHub Actions
+
+### Fixed
+
+- Type stub file (rest.pyi) to match current AsyncNetsuiteRestClient implementation
+
 ## [0.1.1] - 2025-11-24
 
 ### Removed
