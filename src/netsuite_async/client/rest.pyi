@@ -22,7 +22,7 @@ class AsyncNetsuiteRestClient:
     # ------------------------------------
     def __init__(
         self,
-        auth_provider: AsyncAuthProvider = ...,
+        auth_provider: Optional[AsyncAuthProvider] = None,
         account_id: Optional[str] = None,
         record_catalog_cls: Type[RecordCatalog] = RecordCatalog,
         *,

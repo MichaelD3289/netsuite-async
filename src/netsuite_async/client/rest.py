@@ -31,13 +31,13 @@ class AsyncNetsuiteRestClient:
 
     def __init__(
         self,
-        auth_provider: AsyncAuthProvider = OAuth1AsyncAuthProvider(),
+        auth_provider: Optional[AsyncAuthProvider] = None,
         account_id: Optional[str] = None,
         record_catalog_cls: Type[RecordCatalog] = RecordCatalog,
         *,
         base_url: Optional[str] = None,
     ):
-        self.auth_provider = auth_provider
+        self.auth_provider = auth_provider or OAuth1AsyncAuthProvider()
         self.http: Optional[httpx.AsyncClient] = None
         self._catalog_cls = record_catalog_cls
         self._base_url = base_url

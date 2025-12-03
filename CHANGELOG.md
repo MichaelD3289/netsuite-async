@@ -31,6 +31,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - N/A
 
+## [0.1.3] - 2024-12-19
+
+### Fixed
+
+- Environment variable validation no longer occurs on import, allowing library usage without env vars when providing explicit credentials
+- Type stub file to match updated AsyncNetsuiteRestClient constructor signature
+
 ## [0.1.2] - 2024-12-19
 
 ### Added
