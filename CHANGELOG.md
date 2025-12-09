@@ -31,6 +31,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - N/A
 
+## [0.1.4] - 2025-12-09
+
+### Removed
+
+- "Prefer: transient" header as it's only relevant for SuiteQL queries, not REST record operations
+
 ## [0.1.3] - 2025-12-03
 
 ### Fixed

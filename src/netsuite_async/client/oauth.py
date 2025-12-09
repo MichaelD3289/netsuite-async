@@ -200,7 +200,6 @@ def _apply_headers(
     extra_headers: Optional[Mapping[str, str]],
 ) -> MutableMapping[str, str]:
     headers: MutableMapping[str, str] = {
-        "Prefer": "transient",
         "Content-Type": "application/json",
         "cache-control": "no-cache",
     }
