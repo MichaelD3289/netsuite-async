@@ -5,6 +5,9 @@ from netsuite_async.client import (
     OAuth1AsyncAuthProvider,
     OAuth1Credentials,
     async_oauth1_client,
+    GetParams,
+    UpdateParams,
+    CreateParams
 )
 from netsuite_async.exceptions import (
     NetsuiteAuthError,
@@ -33,6 +36,9 @@ __all__ = [
     "NetsuiteServerError",
     "NetsuiteResponseError",
     "NetsuiteClientException",
+    "GetParams",
+    "UpdateParams",
+    "CreateParams",
 ]
 
 
