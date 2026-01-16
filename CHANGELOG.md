@@ -31,7 +31,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - N/A
 
-## [0.2.3] - 2024-12-19
+## [0.2.4] - 2025-01-16
+
+### Fixed
+
+- OAuth1 client now properly includes request bodies in POST/PATCH requests by setting `force_include_body=True` to prevent Authlib from silently stripping JSON payloads
+
+## [0.2.3] - 2025-01-15
 
 ### Changed
 

@@ -143,6 +143,11 @@ class OAuth1AsyncAuthProvider(AsyncAuthProvider):
                 signature_method=self._signature_method,
                 timeout=self._timeout,
                 retries=self._retries,
+                # CRITICAL: Authlib's AsyncOAuth1Client silently strips request bodies from POST/PATCH requests
+                # by default, which breaks NetSuite REST API calls that require JSON payloads.
+                # This parameter forces the client to include the body in OAuth signature calculation
+                # and preserve it in the actual HTTP request.
+                force_include_body=True,
                 **self._kwargs,
             )
         except Exception as exc:  # pragma: no cover - authlib raises different errors
