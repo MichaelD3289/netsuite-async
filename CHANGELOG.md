@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Improved GetParams docstring with clearer NetSuite API limitation warning
+- N/A
 
 ### Deprecated
 
@@ -25,11 +25,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Type checker warnings in parameter classes with type ignore comments
+- N/A
 
 ### Security
 
 - N/A
+
+## [0.2.3] - 2024-12-19
+
+### Changed
+
+- Improved GetParams docstring with clearer NetSuite API limitation warning
+
+### Fixed
+
+- Type checker warnings in parameter classes with type ignore comments
 
 ## [0.2.2] - 2025-01-15
 
