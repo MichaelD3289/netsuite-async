@@ -1,6 +1,6 @@
 [project]
 name = "netsuite-async"
-version = "0.2.1"
+version = "0.2.2"
 description = "High-performance async Python client for NetSuite REST API with concurrency controls and intelligent pagination"
 readme = "README.md"
 authors = [

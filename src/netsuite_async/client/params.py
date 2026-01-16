@@ -90,7 +90,7 @@ class GetParams(BaseParams):
         simple_enum_format: Set to True to return enumeration values in a format 
             that only shows the internal ID value.
     """
-    fields: Union[List[str], str] = field(default=None, metadata={"key": "fields"})
+    fields: Union[List[str], str, None] = field(default=None, metadata={"key": "fields"})
     expand: bool = field(default=False, metadata={"key": "expandSubResources"})
     simple_enum_format: bool = field(default=False, metadata={"key": "simpleEnumFormat"})
 
@@ -106,7 +106,7 @@ class UpdateParams(BaseParams):
             in the update request, including body fields, must be included in the 
             'replace' query parameter.
     """
-    replace: Union[List[str], str] = field(default=None, metadata={"key": "replace"})
+    replace: Union[List[str], str, None] = field(default=None, metadata={"key": "replace"})
     replace_selected_fields: bool = field(default=False, metadata={"key": "replaceSelectedFields"})
 
 
@@ -118,4 +118,4 @@ class CreateParams(BaseParams):
         replace: The names of sublists on this record. All sublist lines will be 
             replaced with lines specified in the request. The names are delimited by comma.
     """
-    replace: Union[List[str], str] = field(default=None, metadata={"key": "replace"})
+    replace: Union[List[str], str, None] = field(default=None, metadata={"key": "replace"})

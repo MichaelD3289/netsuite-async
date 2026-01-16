@@ -158,7 +158,7 @@ class RecordAccessor:
             >>> for customer in customers:
             ...     print(customer.raw["companyname"])
         """
-        summaries = await self.list_summaries(q=q, params=params)
+        summaries = await self.list_summaries(q=q)
         results = []
         for summary in summaries:
             record = await self.get(summary.id, params=params)
@@ -196,7 +196,6 @@ class RecordAccessor:
         """
         summaries = await self.list_summaries_concurrent(
             q=q,
-            params=params,
             max_concurrency=max_concurrency,
             limit=limit,
             offset=offset,
@@ -232,6 +231,7 @@ class RecordAccessor:
             ...     # Process page before loading next one
         """
         url = self._client.build_url(self._record_name)
+
         base_params = {"limit": limit, "offset": offset}
         if q:
             base_params["q"] = q
