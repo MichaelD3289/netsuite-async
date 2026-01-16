@@ -39,7 +39,7 @@ export NETSUITE_TOKEN_SECRET="your_token_secret"
 ```python
 import asyncio
 from netsuite_async import AsyncNetsuiteRestClient, OAuth1AsyncAuthProvider, OAuth1Credentials
-from netsuite_async.client.params import GetParams, UpdateParams
+from netsuite_async import GetParams, UpdateParams
 
 async def main():
     # Option 1: Use default OAuth1 auth provider (reads from environment)
@@ -113,7 +113,7 @@ full_results = await netsuite.customers.all_full_concurrent(max_concurrency=10)
 Use type-safe parameter classes for better IDE support and validation:
 
 ```python
-from netsuite_async.client.params import GetParams, UpdateParams, CreateParams
+from netsuite_async import GetParams, UpdateParams, CreateParams
 
 # Type-safe GET parameters
 get_params = GetParams(
