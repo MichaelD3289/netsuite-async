@@ -13,6 +13,7 @@ A high-performance, async-first Python client for NetSuite's REST API with built
 - **OAuth 1.0 authentication** - Secure authentication with HMAC-SHA256 signatures
 - **Comprehensive error handling** - Detailed exception hierarchy for different error types
 - **Type-safe** - Full type hints and dataclass models
+- **Structured parameters** - Type-safe parameter classes for NetSuite API options
 - **Flexible record mapping** - Dynamic record access with fuzzy matching for typos
 
 ## Installation
@@ -38,6 +39,7 @@ export NETSUITE_TOKEN_SECRET="your_token_secret"
 ```python
 import asyncio
 from netsuite_async import AsyncNetsuiteRestClient, OAuth1AsyncAuthProvider, OAuth1Credentials
+from netsuite_async.client.params import GetParams, UpdateParams
 
 async def main():
     # Option 1: Use default OAuth1 auth provider (reads from environment)
@@ -45,6 +47,10 @@ async def main():
         # Use built-in record types (no registration needed)
         customer = await netsuite.customers.get("123")
         print(f"Customer: {customer.raw['companyname']}")
+        
+        # Use structured parameters for better type safety
+        get_params = GetParams(fields=["companyname", "email"], expand=True)
+        customer = await netsuite.customers.get("123", params=get_params)
         
         # List records with pagination
         customers = await netsuite.customers.list_summaries()
@@ -100,6 +106,45 @@ full_customers = await netsuite.customers.all_full()
 
 # Get all records as full records (concurrent)
 full_results = await netsuite.customers.all_full_concurrent(max_concurrency=10)
+```
+
+### Structured Parameters
+
+Use type-safe parameter classes for better IDE support and validation:
+
+```python
+from netsuite_async.client.params import GetParams, UpdateParams, CreateParams
+
+# Type-safe GET parameters
+get_params = GetParams(
+    fields=["companyname", "email", "phone"],  # List of specific fields
+    expand=True,                               # Expand sublists and subrecords
+    simple_enum_format=True                   # Use simple enum format
+)
+customer = await netsuite.customers.get("123", params=get_params)
+
+# Or use comma-separated string
+get_params = GetParams(fields="companyname,email,phone", expand=True)
+customer = await netsuite.customers.get("123", params=get_params)
+
+# Type-safe UPDATE parameters
+update_params = UpdateParams(
+    replace=["addressbook"],          # Replace addressbook sublist
+    replace_selected_fields=True      # Replace only specified fields
+)
+update_data = {"phone": "555-0124"}
+await netsuite.customers.update("123", update_data, params=update_params)
+
+# Type-safe CREATE parameters
+create_params = CreateParams(
+    replace=["addressbook", "contactlist"]  # Replace multiple sublists as list
+)
+customer_data = {"companyname": "Acme Corp", "email": "contact@acme.com"}
+customer_id = await netsuite.customers.create(customer_data, params=create_params)
+
+# You can still use plain dictionaries for backward compatibility
+plain_params = {"fields": "companyname,email", "expandSubResources": "true"}
+customer = await netsuite.customers.get("123", params=plain_params)
 ```
 
 ### Query Filtering
@@ -218,15 +263,15 @@ custom_records = client.my_custom_record
 ```
 
 **Methods:**
-- `get(internal_id: str) -> FullRecord` - Fetch a single record
-- `get_many(ids: List[str], max_concurrency: int = 10) -> Dict[str, FetchResult]` - Fetch multiple records concurrently
-- `list_summaries(q: Optional[str] = None) -> List[SummaryRecord]` - List all records (with pagination)
-- `list_summaries_concurrent(max_concurrency: int = 10) -> List[SummaryRecord]` - Concurrent pagination
-- `all_full(q: Optional[str] = None) -> List[FullRecord]` - Fetch all records as full records (sequential)
-- `all_full_concurrent(q: Optional[str] = None, max_concurrency: int = 10) -> Dict[str, FetchResult]` - Fetch all records as full records (concurrent)
-- `iter_summary_pages(limit: int = 1000, offset: int = 0) -> AsyncGenerator` - Iterate through pages
-- `create(data: dict) -> str` - Create a new record
-- `update(internal_id: str, data: dict) -> str` - Update an existing record
+- `get(internal_id: str, params: Optional[ParamsLike] = None) -> FullRecord` - Fetch a single record
+- `get_many(ids: List[str], params: Optional[ParamsLike] = None, max_concurrency: int = 10) -> Dict[str, FetchResult]` - Fetch multiple records concurrently
+- `list_summaries(q: Optional[str] = None, params: Optional[ParamsLike] = None) -> List[SummaryRecord]` - List all records (with pagination)
+- `list_summaries_concurrent(max_concurrency: int = 10, params: Optional[ParamsLike] = None) -> List[SummaryRecord]` - Concurrent pagination
+- `all_full(q: Optional[str] = None, params: Optional[ParamsLike] = None) -> List[FullRecord]` - Fetch all records as full records (sequential)
+- `all_full_concurrent(q: Optional[str] = None, params: Optional[ParamsLike] = None, max_concurrency: int = 10) -> Dict[str, FetchResult]` - Fetch all records as full records (concurrent)
+- `iter_summary_pages(limit: int = 1000, offset: int = 0, params: Optional[ParamsLike] = None) -> AsyncGenerator` - Iterate through pages
+- `create(data: dict, params: Optional[ParamsLike] = None) -> str` - Create a new record
+- `update(internal_id: str, data: dict, params: Optional[ParamsLike] = None) -> str` - Update an existing record
 
 #### `RecordCatalog`
 
@@ -269,6 +314,28 @@ Complete record data from get operations:
 Union type for bulk operation results:
 - `FetchResultSuccess(data: FullRecord, success: True)`
 - `FetchResultError(error: str, success: False)`
+
+### Parameter Classes
+
+#### `GetParams`
+Parameters for GET requests to retrieve NetSuite records:
+- `fields: Union[List[str], str]` - The names of the fields and sublists on the record. Only the selected fields and sublists will be returned in the response. Can be a string (comma-separated) or list of field names.
+- `expand: bool` - Set to True to automatically expand all sublists, sublist lines, and subrecords on this record.
+- `simple_enum_format: bool` - Set to True to return enumeration values in a format that only shows the internal ID value.
+
+#### `UpdateParams`
+Parameters for PATCH requests to update NetSuite records:
+- `replace: Union[List[str], str]` - The names of sublists on this record. All sublist lines will be replaced with lines specified in the request. The names are delimited by comma.
+- `replace_selected_fields: bool` - If set to True, all fields that should be deleted in the update request, including body fields, must be included in the 'replace' query parameter.
+
+#### `CreateParams`
+Parameters for POST requests to create NetSuite records:
+- `replace: Union[List[str], str]` - The names of sublists on this record. All sublist lines will be replaced with lines specified in the request. The names are delimited by comma.
+
+#### `ParamsLike`
+Type alias for parameter inputs: `Union[BaseParams, Mapping[str, Any]]`
+
+Accepts either structured parameter classes (GetParams, UpdateParams, CreateParams) or plain dictionaries for backward compatibility.
 
 ### Authentication
 

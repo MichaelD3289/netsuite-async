@@ -14,6 +14,7 @@ from netsuite_async.models.records import (
     SummaryRecord,
     parse_id,
 )
+from netsuite_async.client.params import ParamsLike, BaseParams
 
 if TYPE_CHECKING:  # pragma: no cover - type checking only
     from netsuite_async.client.rest import AsyncNetsuiteRestClient
@@ -35,6 +36,22 @@ class RecordAccessor:
     def __init__(self, client: "AsyncNetsuiteRestClient", record_name: str):
         self._client = client
         self._record_name = record_name
+
+    def _resolve_params(self, params: Optional[ParamsLike]) -> Optional[dict]:
+        """Convert ParamsLike to dict for HTTP requests."""
+        if params is None:
+            return None
+        if isinstance(params, BaseParams):
+            return params.to_dict()
+        return dict(params)
+
+    def _build_params(self, base_params: dict, user_params: Optional[ParamsLike]) -> dict:
+        """Build final params dict by merging base params with user params."""
+        final_params = base_params.copy()
+        resolved_user_params = self._resolve_params(user_params)
+        if resolved_user_params:
+            final_params.update(resolved_user_params)
+        return final_params
 
     # ---------------------------
     # Helpers
@@ -58,14 +75,16 @@ class RecordAccessor:
             raw=raw,
         )
 
+
     # ---------------------------
     # Full-record fetching
     # ---------------------------
-    async def get(self, internal_id: str) -> FullRecord:
+    async def get(self, internal_id: str, params: Optional[ParamsLike] = None) -> FullRecord:
         """Fetch a single record by its internal ID.
         
         Args:
             internal_id: NetSuite internal ID of the record
+            params: Optional query parameters (dict, BaseParams, or ParamsLike) to include in the request
             
         Returns:
             FullRecord with complete record data
@@ -79,18 +98,19 @@ class RecordAccessor:
             >>> print(customer.raw["companyname"])
         """
         url = self._client.build_url(self._record_name, internal_id)
-        res = await self._client.request("GET", url)
+        res = await self._client.request("GET", url, params=self._resolve_params(params))
         if not response_ok(res):
             raise_for_response(res, operation="get", record_name=self._record_name)
         return self._to_full(res.json())
 
     async def get_many(
-        self, internal_ids: List[str], *, max_concurrency: int = 10
+        self, internal_ids: List[str], params: Optional[ParamsLike] = None, *, max_concurrency: int = 10
     ) -> Dict[str, FetchResult]:
         """Fetch multiple records concurrently by their internal IDs.
         
         Args:
             internal_ids: List of NetSuite internal IDs
+            params: Optional query parameters (dict, BaseParams, or ParamsLike) to include in each request
             max_concurrency: Maximum number of concurrent requests (default: 10)
             
         Returns:
@@ -110,7 +130,7 @@ class RecordAccessor:
         async def fetch_one(id_: str) -> tuple[str, FetchResult]:
             async with sem:
                 try:
-                    record = await self.get(id_)
+                    record = await self.get(id_, params)
                     return id_, FetchResultSuccess(data=record)
                 except Exception as exc:
                     return id_, FetchResultError(error=str(exc))
@@ -119,7 +139,7 @@ class RecordAccessor:
         results = await asyncio.gather(*tasks)
         return {id_: data for id_, data in results}
 
-    async def all_full(self, *, q: Optional[str] = None) -> List[FullRecord]:
+    async def all_full(self, *, q: Optional[str] = None, params: Optional[ParamsLike] = None) -> List[FullRecord]:
         """Fetch all records as full records (sequential approach).
         
         Memory-efficient but slower than concurrent version. Use for smaller datasets
@@ -127,6 +147,7 @@ class RecordAccessor:
         
         Args:
             q: Optional query filter using NetSuite's query syntax
+            params: Optional query parameters (dict, BaseParams, or ParamsLike) to include in requests
             
         Returns:
             List of FullRecord objects with complete record data
@@ -137,16 +158,17 @@ class RecordAccessor:
             >>> for customer in customers:
             ...     print(customer.raw["companyname"])
         """
-        summaries = await self.list_summaries(q=q)
+        summaries = await self.list_summaries(q=q, params=params)
         results = []
         for summary in summaries:
-            record = await self.get(summary.id)
+            record = await self.get(summary.id, params=params)
             results.append(record)
         return results
 
     async def all_full_concurrent(
         self,
         q: Optional[str] = None,
+        params: Optional[ParamsLike] = None,
         max_concurrency: int = 10,
         limit: int = 1000,
         offset: int = 0,
@@ -158,6 +180,7 @@ class RecordAccessor:
         
         Args:
             q: Optional query filter using NetSuite's query syntax
+            params: Optional query parameters (dict, BaseParams, or ParamsLike) to include in requests
             max_concurrency: Maximum number of concurrent requests (default: 10)
             limit: Records per page for pagination (default: 1000)
             offset: Starting offset for pagination (default: 0)
@@ -173,19 +196,20 @@ class RecordAccessor:
         """
         summaries = await self.list_summaries_concurrent(
             q=q,
+            params=params,
             max_concurrency=max_concurrency,
             limit=limit,
             offset=offset,
         )
 
         ids = [s.id for s in summaries]
-        return await self.get_many(ids, max_concurrency=max_concurrency)
+        return await self.get_many(ids, params=params, max_concurrency=max_concurrency)
 
     # ---------------------------
     # Summary Pagination
     # ---------------------------
     async def iter_summary_pages(
-        self, limit: int = 1000, offset: int = 0, q: Optional[str] = None
+        self, limit: int = 1000, offset: int = 0, q: Optional[str] = None, params: Optional[ParamsLike] = None
     ) -> AsyncGenerator[List[SummaryRecord], None]:
         """Iterate through pages of summary records.
         
@@ -196,6 +220,7 @@ class RecordAccessor:
             limit: Records per page (default: 1000, max: 1000)
             offset: Starting offset (default: 0)
             q: Optional query filter using NetSuite's query syntax
+            params: Optional query parameters (dict, BaseParams, or ParamsLike) to include in requests
             
         Yields:
             List[SummaryRecord]: Each page of summary records
@@ -207,12 +232,13 @@ class RecordAccessor:
             ...     # Process page before loading next one
         """
         url = self._client.build_url(self._record_name)
-        params = {"limit": limit, "offset": offset}
+        base_params = {"limit": limit, "offset": offset}
         if q:
-            params["q"] = q
+            base_params["q"] = q
+        final_params = self._build_params(base_params, params)
 
         while True:
-            res = await self._client.request("GET", url, params=params)
+            res = await self._client.request("GET", url, params=final_params)
             if not response_ok(res):
                 raise_for_response(res, operation="list", record_name=self._record_name)
 
@@ -225,9 +251,9 @@ class RecordAccessor:
                 break
 
             url, _, query = next_link.partition("?")
-            params.update(parse_limit_offset(query))
+            final_params.update(parse_limit_offset(query))
 
-    async def list_summaries(self, q: Optional[str] = None) -> List[SummaryRecord]:
+    async def list_summaries(self, q: Optional[str] = None, params: Optional[ParamsLike] = None) -> List[SummaryRecord]:
         """List all summary records using sequential pagination.
         
         Fetches all pages sequentially and returns complete list. Memory usage
@@ -235,6 +261,7 @@ class RecordAccessor:
         
         Args:
             q: Optional query filter using NetSuite's query syntax
+            params: Optional query parameters (dict, BaseParams, or ParamsLike) to include in requests
             
         Returns:
             List of SummaryRecord objects with basic record data
@@ -247,7 +274,7 @@ class RecordAccessor:
             >>> print(f"Found {len(customers)} active customers")
         """
         records = []
-        async for page_items in self.iter_summary_pages(q=q):
+        async for page_items in self.iter_summary_pages(q=q, params=params):
             records.extend(page_items)
         return records
 
@@ -260,6 +287,7 @@ class RecordAccessor:
         max_concurrency: int = 10,
         limit: int = 1000,
         offset: int = 0,
+        params: Optional[ParamsLike] = None,
     ) -> List[SummaryRecord]:
         """List all summary records using concurrent pagination.
         
@@ -271,6 +299,7 @@ class RecordAccessor:
             max_concurrency: Maximum number of concurrent page requests (default: 10)
             limit: Records per page (default: 1000, max: 1000)
             offset: Starting offset (default: 0)
+            params: Optional query parameters (dict, BaseParams, or ParamsLike) to include in requests
             
         Returns:
             List of SummaryRecord objects with basic record data
@@ -284,12 +313,13 @@ class RecordAccessor:
             >>> print(f"Retrieved {len(customers)} customers concurrently")
         """
         url = self._client.build_url(self._record_name)
-        params = {"limit": limit, "offset": offset}
+        base_params = {"limit": limit, "offset": offset}
         if q:
-            params["q"] = q
+            base_params["q"] = q
+        final_params = self._build_params(base_params, params)
 
         # fetch first page
-        res = await self._client.request("GET", url, params=params)
+        res = await self._client.request("GET", url, params=final_params)
         if not response_ok(res):
             raise_for_response(res, operation="list", record_name=self._record_name)
 
@@ -310,9 +340,10 @@ class RecordAccessor:
 
         async def fetch_page(page_offset: int) -> List[SummaryRecord]:
             async with sem:
-                page_params = {"limit": limit, "offset": page_offset}
+                base_page_params = {"limit": limit, "offset": page_offset}
                 if q:
-                    page_params["q"] = q
+                    base_page_params["q"] = q
+                page_params = self._build_params(base_page_params, params)
 
                 res = await self._client.request("GET", url, params=page_params)
                 if not response_ok(res):
@@ -333,12 +364,13 @@ class RecordAccessor:
     # ---------------------------
     # Mutations
     # ---------------------------
-    async def update(self, internal_id: str, data: dict) -> str:
+    async def update(self, internal_id: str, data: dict, params: Optional[ParamsLike] = None) -> str:
         """Update an existing record with new data.
         
         Args:
             internal_id: NetSuite internal ID of the record to update
             data: Dictionary containing fields to update
+            params: Optional query parameters (dict, BaseParams, or ParamsLike) to include in the request
             
         Returns:
             The internal ID of the updated record
@@ -359,16 +391,17 @@ class RecordAccessor:
             >>> await client.customers.update("123", update_data)
         """
         url = self._client.build_url(self._record_name, internal_id)
-        res = await self._client.request("PATCH", url, json=data)
+        res = await self._client.request("PATCH", url, json=data, params=self._resolve_params(params))
         if not response_ok(res):
             raise_for_response(res, operation="update", record_name=self._record_name)
         return internal_id
 
-    async def create(self, data: dict) -> str:
+    async def create(self, data: dict, params: Optional[ParamsLike] = None) -> str:
         """Create a new record with the provided data.
         
         Args:
             data: Dictionary containing record fields and values
+            params: Optional query parameters (dict, BaseParams, or ParamsLike) to include in the request
             
         Returns:
             The internal ID of the newly created record
@@ -389,7 +422,7 @@ class RecordAccessor:
             >>> print(f"Created customer with ID: {customer_id}")
         """
         url = self._client.build_url(self._record_name)
-        res = await self._client.request("POST", url, json=data)
+        res = await self._client.request("POST", url, json=data, params=self._resolve_params(params))
         if not response_ok(res):
             raise_for_response(res, operation="create", record_name=self._record_name)
 
@@ -459,3 +492,4 @@ def response_ok(response) -> bool:
         >>> response_ok(response)  # True for 200, 201, etc.
     """
     return 200 <= response.status_code <= 300
+

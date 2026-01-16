@@ -9,11 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- N/A
+- Structured parameter classes (`GetParams`, `UpdateParams`, `CreateParams`) for type-safe NetSuite API parameters
+- `ParamsLike` type alias supporting both structured parameter classes and plain dictionaries
+- `BaseParams` base class with automatic conversion to NetSuite query parameters
+- `ParamSet` for composable parameter merging
+- New `netsuite_async.client.params` module with comprehensive parameter utilities
+- Support for `Union[List[str], str]` types in `fields` and `replace` parameters for flexible usage
+- Enhanced documentation with structured parameter examples and API reference
 
 ### Changed
 
-- N/A
+- All `RecordAccessor` methods now accept `params: Optional[ParamsLike]` parameter
+- Parameter handling now supports both structured classes and backward-compatible dictionaries
+- Updated README with comprehensive structured parameter examples and usage patterns
+- Enhanced method docstrings to document `ParamsLike` parameter support
 
 ### Deprecated
 
