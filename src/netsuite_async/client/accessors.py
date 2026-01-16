@@ -16,6 +16,7 @@ from netsuite_async.models.records import (
 )
 from netsuite_async.client.params import ParamsLike, BaseParams
 
+
 if TYPE_CHECKING:  # pragma: no cover - type checking only
     from netsuite_async.client.rest import AsyncNetsuiteRestClient
 

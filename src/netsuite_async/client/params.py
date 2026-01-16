@@ -17,6 +17,8 @@ __all__ = [
 
 ParamsDict = Dict[str, Any]
 
+class Unset:
+    pass
 
 @dataclass(frozen=True)
 class BaseParams:
@@ -35,7 +37,7 @@ class BaseParams:
             value = getattr(self, f.name)
 
             # IMPORTANT: do not skip False / 0 / "" accidentally
-            if value is None:
+            if value is None or isinstance(value, Unset):
                 continue
 
             # common NetSuite style: list => comma-separated string
@@ -89,10 +91,18 @@ class GetParams(BaseParams):
             and subrecords on this record.
         simple_enum_format: Set to True to return enumeration values in a format 
             that only shows the internal ID value.
+
+    Warning:
+        NetSuite does not support selective retrieval of sublist and subrecord fields.
+        Setting both 'fields' and 'expand=True' will result in a 400 error.
+        You can either specify fields (for body fields only) OR use expand=True,
+        but not both together.
+        
+        See: https://docs.oracle.com/en/cloud/saas/netsuite/ns-online-help/section_1545141500.html
     """
-    fields: Union[List[str], str, None] = field(default=None, metadata={"key": "fields"})
-    expand: bool = field(default=False, metadata={"key": "expandSubResources"})
-    simple_enum_format: bool = field(default=False, metadata={"key": "simpleEnumFormat"})
+    fields: Union[List[str], str, None, Unset] = field(default_factory=Unset, metadata={"key": "fields"})
+    expand: Union[bool, Unset] = field(default_factory=Unset, metadata={"key": "expandSubResources"})  # type: ignore[assignment]
+    simple_enum_format: Union[bool, Unset] = field(default_factory=Unset, metadata={"key": "simpleEnumFormat"})  # type: ignore[assignment]
 
 
 @dataclass(frozen=True)
@@ -106,8 +116,8 @@ class UpdateParams(BaseParams):
             in the update request, including body fields, must be included in the 
             'replace' query parameter.
     """
-    replace: Union[List[str], str, None] = field(default=None, metadata={"key": "replace"})
-    replace_selected_fields: bool = field(default=False, metadata={"key": "replaceSelectedFields"})
+    replace: Union[List[str], str, None, Unset] = field(default_factory=Unset, metadata={"key": "replace"})
+    replace_selected_fields: Union[bool, Unset] = field(default_factory=Unset, metadata={"key": "replaceSelectedFields"})  # type: ignore[assignment]
 
 
 @dataclass(frozen=True)
@@ -118,4 +128,4 @@ class CreateParams(BaseParams):
         replace: The names of sublists on this record. All sublist lines will be 
             replaced with lines specified in the request. The names are delimited by comma.
     """
-    replace: Union[List[str], str, None] = field(default=None, metadata={"key": "replace"})
+    replace: Union[List[str], str, None, Unset] = field(default_factory=Unset, metadata={"key": "replace"})
